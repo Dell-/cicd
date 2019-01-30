@@ -1,0 +1,38 @@
+version: "1.0"
+
+setup:
+  git:
+    ssh-key: "/path/to/ssh.key"
+
+services:
+  elasticsearch:
+    image: elasticsearch
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: genesis
+    command: "mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+  php7.1:
+    image: genesis/php-apache/7.1:v1
+    links:
+      - mysql
+      - elasticsearch
+
+pipelines:
+  clone:
+    - git clone git@github.com:Dell-/genesis.git
+  build:
+    - composer install --no-interaction --optimize-autoloader --no-progress
+    - php yii migrate --interactive=0
+    - yes "yes" | php yii fixture/generate user --count=5
+    - yes "yes" | php yii fixture/generate track --count=70
+    - yes "yes" | php yii fixture/generate artist --count=7
+    - yes "yes" | php yii fixture/generate album --count=7
+    - yes "yes" | php yii fixture/generate genre --count=35
+    - yes "yes" | php yii fixture/generate artist_album --count=7
+    - yes "yes" | php yii fixture/generate artist_track --count=70
+    - yes "yes" | php yii fixture/generate track_album --count=70
+    - yes "yes" | php yii fixture/generate track_genre --count=70
+    - yes "yes" | php yii fixture "*"
